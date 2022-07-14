@@ -4,6 +4,7 @@ import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
@@ -67,7 +68,7 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void removeUserById(long id) {
-        String alter = "ALTER TABLE Users DROP id";
+        String alter = "DELETE FROM Users WHERE id = ?";
         try (PreparedStatement preparedStatement = connect.prepareStatement(alter)) {
             preparedStatement.setLong(1, id);
             preparedStatement.execute();
@@ -84,14 +85,16 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public List<User> getAllUsers() {
         String getAll = "SELECT * FROM Users";
+        List<User> users = new ArrayList<>();
         try (Statement statement = connect.createStatement()){
             ResultSet resultSet = statement.executeQuery(getAll);
             while (resultSet.next()) {
+                User userGet = new User();
                 long id = resultSet.getLong(1);
                 String name = resultSet.getString(2);
                 String lastName = resultSet.getString(3);
                 byte age = resultSet.getByte(4);
-                System.out.printf("%d %s %s %d", id, name, lastName, age);
+                users.add(new User(name, lastName, age));
             }
             connect.commit();
         } catch (SQLException e) {
@@ -102,21 +105,21 @@ public class UserDaoJDBCImpl implements UserDao {
             }
             throw new RuntimeException(e);
         }
-        return null;
+        return users;
     }
 
     public void cleanUsersTable() {
         String clean = "TRUNCATE TABLE Users";
-       try (Statement statement = connect.createStatement()){
-           statement.execute(clean);
-           connect.commit();
-       } catch (SQLException e) {
-           try {
-               connect.rollback();
-           } catch (SQLException ex) {
-               throw new RuntimeException(ex);
-           }
-           throw new RuntimeException(e);
-       }
+        try (Statement statement = connect.createStatement()){
+            statement.execute(clean);
+            connect.commit();
+        } catch (SQLException e) {
+            try {
+                connect.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException(e);
+        }
     }
 }
